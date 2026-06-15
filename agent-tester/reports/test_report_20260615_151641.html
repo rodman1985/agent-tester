@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI简历结构化抽取Agent版本准出测试报告</title>
+    <style>
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        h2 { color: #2c5282; margin-top: 40px; border-bottom: 2px solid #2c5282; padding-bottom: 10px; }
+        h3 { color: #4a5568; margin-top: 25px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: #f8f9fa; font-weight: bold; color: #333; }
+        .section { margin-bottom: 30px; }
+        .pass { color: #28a745; font-weight: bold; }
+        .fail { color: #dc3545; font-weight: bold; }
+        .warn { color: #ffc107; font-weight: bold; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; color: white; }
+        .badge-pass { background: #28a745; }
+        .badge-fail { background: #dc3545; }
+        .result-box { padding: 20px; background: #f0f4f8; border-radius: 8px; margin: 20px 0; text-align: center; }
+        .result-pass { background: #d4edda; border: 2px solid #28a745; }
+        .result-fail { background: #f8d7da; border: 2px solid #dc3545; }
+        .compare-table .prev { color: #6c757d; }
+        .compare-table .curr { color: #007bff; font-weight: bold; }
+        .indicator-optimize { color: #28a745; }
+        .indicator-flat { color: #6c757d; }
+        .indicator-degrade { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI简历结构化抽取Agent版本准出测试报告</h1>
+
+        <div class="section">
+            <h2>一、测试基础信息</h2>
+            <table>
+                <tr><th style="width: 20%;">测试项</th><th>填写内容</th></tr>
+                <tr><td>Agent版本号</td><td>v1.0.0</td></tr>
+                <tr><td>测试时间</td><td>2026-06-15 15:16:41</td></tr>
+                <tr><td>测试类型</td><td>版本准出测试</td></tr>
+                <tr><td>测试范围</td><td>简历结构化信息自动抽取（基础字段、教育/工作/项目嵌套结构、格式归一、噪声过滤、空值处理）</td></tr>
+                <tr><td>测试输入素材</td><td>标准简历、多页长简历、排版错乱简历、带噪声水印简历、字段缺失简历、中英混合简历、口语化简历</td></tr>
+                <tr><td>基准依据</td><td>人工标注真值（Ground Truth）、统一字段Schema、量化打分标准、准出阈值规范</td></tr>
+                <tr><td>测试结论</td><td><span class="badge-fail badge">□ 版本准出不通过（阻塞发布）</span></td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>二、测试核心说明（准出标准定义）</h2>
+            
+            <h3>2.1 评测维度与权重（固定总分100分）</h3>
+            <table>
+                <tr><th>维度编号</th><th>评测维度名称</th><th>满分权重</th><th>维度核心定义</th></tr>
+                <tr><td>D1</td><td>必填字段抽取完整性</td><td>25分</td><td>校验预设所有核心必填字段是否无遗漏抽取，无缺失漏检</td></tr>
+                <tr><td>D2</td><td>字段内容抽取准确率</td><td>20分</td><td>校验所有抽取字段内容与原文真值是否完全一致，无错字、错值、错位</td></tr>
+                <tr><td>D3</td><td>嵌套结构拆分合规度</td><td>15分</td><td>校验教育、工作、项目多条目是否拆分为独立结构化数组，无合并、无字段错位绑定</td></tr>
+                <tr><td>D4</td><td>字段归一化标准化能力</td><td>10分</td><td>校验日期、手机号、学历、薪资等字段是否统一规范格式输出</td></tr>
+                <tr><td>D5</td><td>噪声过滤+缺失值处理能力</td><td>10分</td><td>校验水印、页码、广告等噪声过滤效果，无字段编造、空值正确置null</td></tr>
+                <tr><td>D6</td><td>格式结构化合规度</td><td>10分</td><td>校验Agent输出内容是否完全符合预设Markdown结构化格式</td></tr>
+                <tr><td>D7</td><td>信息保真实性</td><td>10分</td><td>校验Agent抽取结果是否存在信息丢失、虚构编造问题</td></tr>
+            </table>
+
+            <h3>2.2 单测试用例通过标准</h3>
+            <table>
+                <tr><th>等级</th><th>总分范围</th><th>说明</th></tr>
+                <tr><td class="pass">PASS（通过）</td><td>总分 ≥ 96分</td><td>无一票否决问题</td></tr>
+                <tr><td class="warn">WARN（轻度不通过）</td><td>72分 ≤ 总分 ＜ 96分</td><td>不阻塞版本准出</td></tr>
+                <tr><td class="fail">FAIL（失败）</td><td>总分 ＜ 72分</td><td>阻塞版本发布</td></tr>
+            </table>
+
+            <h3>2.3 一票否决规则</h3>
+            <ul>
+                <li>核心联系方式（手机号、邮箱）抽取完全错误、缺失</li>
+                <li>篡改学历、任职公司、岗位名称等核心履历信息</li>
+                <li>凭空编造新增工作经历、项目经历、学历信息</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>三、测试用例覆盖范围</h2>
+            <table>
+                <tr><th style="width: 15%;">用例ID</th><th style="width: 35%;">测试场景</th><th>测试类型</th></tr>
+                <tr><td>1</td><td>完整标准技术岗简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>2</td><td>应届生简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>3</td><td>销售岗简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>4</td><td>碎片化口语化简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>5</td><td>信息严重残缺的简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>6</td><td>重复冗余信息的简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>7</td><td>无有效简历信息的空白/无效输入</td><td>基础能力测试</td></tr>
+                <tr><td>8</td><td>工作经历与项目经验跨模块混淆的简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>9</td><td>信息完整的正常产品岗简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>10</td><td>核心信息缺失的简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>11</td><td>时间线/信息前后矛盾的简历输入</td><td>基础能力测试</td></tr>
+                <tr><td>12</td><td>超长冗余、内容重复的简历输入</td><td>基础能力测试</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>四、单用例详细测试结果记录表</h2>
+            <table>
+                <tr>
+                    <th>用例ID</th><th>用例场景</th><th>D1(25)</th><th>D2(20)</th><th>D3(15)</th>
+                    <th>D4(10)</th><th>D5(10)</th><th>D6(10)</th><th>D7(10)</th>
+                    <th>总分</th><th>一票否决</th><th>结论</th><th>缺陷说明</th>
+                </tr>
+                <tr class="pass">
+                    <td>1</td><td>完整标准技术岗简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>2</td><td>应届生简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>3</td><td>销售岗简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>4</td><td>碎片化口语化简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>5</td><td>信息严重残缺的简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>6</td><td>重复冗余信息的简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>7</td><td>无有效简历信息的空白/无效输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>8</td><td>工作经历与项目经验跨模块混淆的简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>9</td><td>信息完整的正常产品岗简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>10</td><td>核心信息缺失的简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>11</td><td>时间线/信息前后矛盾的简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+                <tr class="pass">
+                    <td>12</td><td>超长冗余、内容重复的简历输入...</td>
+                    <td>25</td><td>20</td><td>15</td>
+                    <td>10</td><td>10</td><td>10</td><td>10</td>
+                    <td><strong>100</strong></td>
+                    <td>否</td>
+                    <td class="pass">PASS</td>
+                    <td>无</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>五、结构化合规测试</h2>
+            
+            <h3>5.1 Schema合规校验结果</h3>
+            <table>
+                <tr><th>用例ID</th><th>用例场景</th><th>模块得分</th><th>字段得分</th><th>格式得分</th><th>结构得分</th><th>总合规分</th><th>是否合规</th></tr>
+                <tr>
+                <td>1</td><td>完整标准技术岗简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>2</td><td>应届生简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>3</td><td>销售岗简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>4</td><td>碎片化口语化简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>5</td><td>信息严重残缺的简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>33</td><td>100</td>
+                <td>83</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>6</td><td>重复冗余信息的简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>7</td><td>无有效简历信息的空白/无效输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>8</td><td>工作经历与项目经验跨模块混淆的简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>9</td><td>信息完整的正常产品岗简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>10</td><td>核心信息缺失的简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>33</td><td>100</td>
+                <td>83</td><td class="fail">否</td>
+            </tr>
+<tr>
+                <td>11</td><td>时间线/信息前后矛盾的简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+<tr>
+                <td>12</td><td>超长冗余、内容重复的简历输入...</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td>100</td>
+                <td>100</td><td class="pass">是</td>
+            </tr>
+
+            </table>
+
+            <h3>5.2 Schema合规统计</h3>
+            <div class="stats-grid">
+                <div class="stat-item"><strong>Schema合规用例数：</strong>11/12</div>
+                <div class="stat-item"><strong>Schema合规率：</strong>91.7%</div>
+            </div>
+
+            <h3>5.3 刚性规则执行说明</h3>
+            <ul>
+                <li><strong>模块完整性校验</strong>：Schema强制校验所有声明模块是否存在</li>
+                <li><strong>字段完整性校验</strong>：Schema强制校验所有声明字段是否存在</li>
+                <li><strong>格式归一化校验</strong>：正则刚性校验手机号、邮箱、日期、学历格式</li>
+                <li><strong>结构化合规校验</strong>：Schema强制校验嵌套结构、Markdown格式标记</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>六、批次最终合规审计</h2>
+
+
+            <h3>6.1 批次合规校验结果</h3>
+            <table>
+                <tr><th>校验项</th><th>实测值</th><th>标准阈值</th><th>是否达标</th></tr>
+                <tr><td>通过率</td><td>100.0%</td><td>≥95%</td><td class="pass">是</td></tr>
+                <tr><td>指标波动率</td><td>33.1%</td><td>≤10%</td><td class="fail">否</td></tr>
+                <tr><td>平均抖动率</td><td>0.00%</td><td>≤1%</td><td class="pass">是</td></tr>
+                <tr><td>P0严重缺陷</td><td>0个</td><td>0个</td><td class="pass">是</td></tr>
+                <tr><td>数据完整性</td><td>0个缺失</td><td>0个缺失</td><td class="pass">是</td></tr>
+            </table>
+
+            <h3>6.2 批次合规审计结论</h3>
+            <div class="result-box fail">
+                <p><strong>审计时间：</strong>2026-06-15 15:16:41</p>
+                <p><strong>审计结论：</strong>批次不合规</p>
+                <p><strong>版本准出建议：</strong><span style="font-size: 18px;">不通过，需整改</span></p>
+            </div>
+
+            <h3>6.3 SOP7批次合规执行说明</h3>
+            <ul>
+                <li><strong>通过率校验</strong>：批次核心指标无跳变，通过率≥95%</li>
+                <li><strong>波动率校验</strong>：指标波动正常，延迟/Token波动≤10%</li>
+                <li><strong>抖动率校验</strong>：平均抖动率≤1%，无环境异常</li>
+                <li><strong>P0缺陷校验</strong>：无偶发、不可复现的P0严重缺陷</li>
+                <li><strong>数据完整性校验</strong>：所有评测数据完整归档，可追溯复现</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>七、SkillSpector+AgentProbe联合评测（信息保真/幻觉率检测）</h2>
+            <p>本章节为SkillSpector+AgentProbe联合评测方案执行结果，严格遵循「基线锁定→多轮复测→刚性校验→指标计算→版本差分→门禁判定」流程。</p>
+
+            <h3>7.1 Step1：基线冻结校验</h3>
+            <ul>
+                <li><strong>加载状态</strong>：已加载固定基线简历用例库、真值GT文件、结构化Schema</li>
+                <li><strong>MD5校验</strong>：用例素材与真值文件校验通过，输入无变更、基线唯一</li>
+            </ul>
+
+            <h3>7.2 Step2：AgentProbe防抖复测执行</h3>
+            <table>
+                <tr><th>统计项</th><th>实测值</th></tr>
+                <tr><td>单例重复执行次数</td><td>3次</td></tr>
+                <tr><td>有效保真字段数</td><td>60</td></tr>
+                <tr><td>漏失核心字段数</td><td>5</td></tr>
+                <tr><td>多轮结果抖动率</td><td>0.00%</td></tr>
+                <tr><td>环境异常判定</td><td class="pass">正常</td></tr>
+            </table>
+
+            <h3>7.3 Step3：SkillSpector幻觉批量扫描</h3>
+
+            <h4>8.3.1 幻觉检测分类统计</h4>
+            <table>
+                <tr><th>错误类型</th><th>数量</th><th>说明</th></tr>
+                <tr><td>字段无中生有</td><td>0</td><td>输出中存在但预期中不存在的字段</td></tr>
+                <tr><td>履历信息篡改</td><td>10</td><td>字段值与预期不符</td></tr>
+                <tr><td>虚假数值赋值</td><td>11</td><td>使用虚构关键词或虚假描述</td></tr>
+                <tr><td>无效冗余编造</td><td>1</td><td>重复内容或无意义填充</td></tr>
+            </table>
+
+            <h4>8.3.2 虚构字段清单</h4>
+            <table><tr><th>虚构字段</th></tr><tr><td>未知字段</td></tr></table>
+
+            <h3>7.4 Step4：核心指标自动化计算</h3>
+            <table>
+                <tr><th>指标</th><th>计算公式</th><th>实测值</th></tr>
+                <tr><td>信息保真基础分</td><td>Base_保真 = 10 × (无丢失保真字段数 / 核心总字段数)</td><td>9.17分</td></tr>
+                <tr><td>最终保真得分</td><td>Score_保真 = max(0, Base_保真 - 虚构字段总数)</td><td>0.00分</td></tr>
+                <tr><td>幻觉虚构率</td><td>虚构错误字段数 / 全部抽取字段数 × 100%</td><td>38.18%</td></tr>
+                <tr><td>信息丢失率</td><td>漏失核心字段数 / 核心总字段数 × 100%</td><td>8.33%</td></tr>
+            </table>
+
+            <h3>7.5 Step5：版本防抖判定（1%阈值规则）</h3>
+            <ul>
+                <li><strong>判定规则</strong>：指标波动≤1%判定为数据持平，不标记优化/退化；波动＞1%采信真实版本迭代差异</li>
+                <li><strong>本轮判定</strong>：幻觉虚构率变化≤1%，判定为数据持平</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>八、AIOpsLab性能&amp;成本&amp;稳定性评测</h2>
+            <p>本章节基于AIOpsLab实现性能、成本、稳定性综合评测，遵循「基线锁定→批量隔离→多轮防抖→指标计算→版本差分→数据归档」流程。</p>
+
+            <h3>8.1 Step1：基线锁定</h3>
+            <ul>
+                <li><strong>基线MD5</strong>：92c3c2faee66da889a3ccabe574226f1</li>
+                <li><strong>校验状态</strong>：已完成输入素材MD5校验，锁定所有非性能变量</li>
+            </ul>
+
+            <h3>8.2 Step2：批量隔离执行</h3>
+            <ul>
+                <li><strong>执行模式</strong>：沙箱批量执行，单用例独立会话、无缓存干扰</li>
+                <li><strong>用例总数</strong>：12个</li>
+                <li><strong>通过数量</strong>：12个</li>
+                <li><strong>通过率</strong>：100.00%</li>
+            </ul>
+
+            <h3>8.3 Step3：多轮防抖采样</h3>
+            <ul>
+                <li><strong>执行轮数</strong>：3轮</li>
+                <li><strong>采样策略</strong>：采集三轮性能数据，取中位数剔除极值异常</li>
+            </ul>
+
+            <h3>8.4 Step4：指标自动化计算</h3>
+            <table class="data-table">
+                <tr><th>指标</th><th>计算公式</th><th>本次值</th></tr>
+                <tr><td>单样本平均Token消耗</td><td>总Token消耗 / 有效用例数（取三轮均值）</td><td>1435.83</td></tr>
+                <tr><td>P95推理延迟</td><td>所有单样本耗时排序，取95分位耗时</td><td>310.00ms</td></tr>
+                <tr><td>CostPass综合成本</td><td>单样本平均Token消耗 / 单用例通过率</td><td>1435.83</td></tr>
+                <tr><td>延迟抖动率</td><td>延迟标准差 / 延迟均值 × 100%</td><td>17.59%</td></tr>
+                <tr><td>Token抖动率</td><td>Token标准差 / Token均值 × 100%</td><td>48.69%</td></tr>
+                <tr><td>综合抖动率</td><td>(延迟抖动率 + Token抖动率) / 2</td><td>33.14%</td></tr>
+            </table>
+
+            <h3>8.5 Step5：版本差分判定（1%阈值规则）</h3>
+            <table class="data-table">
+                <tr><th>指标</th><th>上一版本</th><th>本次版本</th><th>判定结果</th></tr>
+                <tr><td>单样本平均Token消耗</td><td>1432.17</td><td>1435.83</td><td class="indicator-持平">持平</td></tr>
+                <tr><td>P95推理延迟</td><td>310.00ms</td><td>310.00ms</td><td class="indicator-持平">持平</td></tr>
+                <tr><td>CostPass综合成本</td><td>1432.17</td><td>1435.83</td><td class="indicator-持平">持平</td></tr>
+                <tr><td>综合抖动率</td><td>33.18%</td><td>33.14%</td><td class="indicator-持平">持平</td></tr>
+                <tr><td><strong>综合判定</strong></td><td colspan="3" class="indicator-持平"><strong>持平</strong></td></tr>
+            </table>
+
+            <h3>8.6 Step6：数据归档</h3>
+            <ul>
+                <li><strong>遥测日志</strong>：已归档</li>
+                <li><strong>性能指标</strong>：已归档</li>
+                <li><strong>批次报告</strong>：已归档</li>
+                <li><strong>追溯支持</strong>：支持迭代追溯与回归对比</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>九、AgentEval准确率&amp;完整性&amp;一致性评测</h2>
+            <p>本章节基于AgentEval实现准确率、完整性、一致性评测，遵循「基线锁定→多轮防抖→刚性打分→指标降噪→版本差分→数据归档」流程。</p>
+
+            <h3>9.1 Step1：基线锁定</h3>
+            <ul>
+                <li><strong>基线MD5</strong>：57e1f04aed3703e68f473c0e331e7201</li>
+                <li><strong>校验状态</strong>：已加载冻结简历基线用例、GT真值文件、逻辑校验规则库</li>
+            </ul>
+
+            <h3>9.2 Step2：多轮防抖执行</h3>
+            <ul>
+                <li><strong>执行轮数</strong>：3轮</li>
+                <li><strong>采样策略</strong>：所有用例单例重复执行3次，规避单次随机误差</li>
+            </ul>
+
+            <h3>9.3 Step3：AgentEval刚性打分</h3>
+            <ul>
+                <li><strong>字段对错判定</strong>：字符串精准匹配+白名单归一校验，无语义主观打分</li>
+                <li><strong>缺失判定</strong>：基于GT字段清单逐键比对，精准统计漏项</li>
+                <li><strong>逻辑一致性</strong>：加载时间、履历、学历刚性校验规则，自动判定合规/违规</li>
+            </ul>
+
+            <h3>9.4 Step4：指标降噪聚合</h3>
+            <table class="data-table">
+                <tr><th>指标</th><th>计算公式</th><th>本次值</th><th>准入阈值</th><th>是否达标</th></tr>
+                <tr><td>准确率</td><td>匹配字段数 / 总字段数 × 100%</td><td>51.75%</td><td>≥95%</td><td>否</td></tr>
+                <tr><td>完整性</td><td>输出字段数 / GT字段数 × 100%</td><td>59.23%</td><td>≥95%</td><td>否</td></tr>
+                <tr><td>一致性</td><td>逻辑规则校验通过数 / 规则总数 × 100%</td><td>100.00%</td><td>≥95%</td><td>是</td></tr>
+            </table>
+            <p><strong>有效用例数</strong>：12 / 12（抖动率≤1%）</p>
+
+            <h3>9.5 Step5：版本差分对比（1%阈值规则）</h3>
+            <table class="data-table">
+                <tr><th>指标</th><th>上一版本</th><th>本次版本</th><th>判定结果</th></tr>
+                <tr><td>准确率</td><td>100.00%</td><td>51.75%</td><td>退化</td></tr>
+                <tr><td>完整性</td><td>100.00%</td><td>59.23%</td><td>退化</td></tr>
+                <tr><td>一致性</td><td>100.00%</td><td>100.00%</td><td>持平</td></tr>
+                <tr><td><strong>综合判定</strong></td><td colspan="3">退化</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>十、Agent优化质量专项评估（版本迭代对比）</h2>
+            <p>本章节为版本迭代核心评估项，用于量化新版本相对旧版本的能力优化/退化情况。</p>
+
+            <h3>10.1 评估基准说明</h3>
+            <p>对比基准：当前新版本 VS 线上稳定旧版本；判定规则：指标正向变动为优化，负向变动为能力退化，无变动为持平</p>
+
+            <h3>10.2 版本迭代对比结果</h3>
+            <table class="compare-table">
+                <tr><th>指标</th><th>上一轮结果</th><th>本轮结果</th><th>对比结论</th></tr>
+                <tr><td>测试总数</td><td class="prev">12</td><td class="curr">12</td><td>持平</td></tr>
+                <tr><td>通过数</td><td class="prev">12</td><td class="curr">12</td><td>持平</td></tr>
+                <tr><td>失败数</td><td class="prev">0</td><td class="curr">0</td><td>持平</td></tr>
+                <tr><td>通过率</td><td class="prev">100.0%</td><td class="curr">100.0%</td><td>持平</td></tr>
+            </table>
+
+            <h3>10.3 优化数据对比记录表</h3>
+            <table>
+                <tr><th>优化维度</th><th>指标名称</th><th>旧版本数值</th><th>新版本数值</th><th>优化结论</th></tr>
+                <tr><td rowspan=3>效果优化</td><td>准确率</td><td>100.00%</td><td>51.75%</td><td class="indicator-退化">退化</td></tr>
+                <tr><td>完整性</td><td>100.00%</td><td>59.23%</td><td class="indicator-退化">退化</td></tr>
+                <tr><td>一致性</td><td>100.00%</td><td>100.00%</td><td class="indicator-持平">持平</td></tr>
+                <tr><td rowspan=4>成本优化</td><td>单样本Token消耗</td><td>1432.17</td><td>1435.83</td><td class="indicator-持平">持平</td></tr>
+                <tr><td>P95推理延迟</td><td>310.00ms</td><td>310.00ms</td><td class="indicator-持平">持平</td></tr>
+                <tr><td>CostPass综合成本</td><td>1432.17</td><td>1435.83</td><td class="indicator-持平">持平</td></tr>
+                <tr><td>综合抖动率</td><td>33.18%</td><td>33.14%</td><td class="indicator-持平">持平</td></tr>
+                <tr><td rowspan=3>稳定性优化</td><td>幻觉虚构率</td><td>38.18%</td><td>38.18%</td><td class="indicator-持平">持平</td></tr>
+                <tr><td>信息丢失率</td><td>8.33%</td><td>8.33%</td><td class="indicator-持平">持平</td></tr>
+                <tr><td>最终保真得分</td><td>0.00分</td><td>0.00分</td><td class="indicator-持平">持平</td></tr>
+                <tr><td colspan=5><strong>版本整体优化结论：</strong> <span class="badge-fail badge">持平</span> | <strong>综合评分：</strong> 100.0分</td></tr>
+            </table>
+
+            <h3>10.4 批量版本准出统计指标</h3>
+            <table>
+                <tr><th>统计指标</th><th>计算公式</th><th>标准阈值</th><th>本次实测值</th><th>是否达标</th></tr>
+                <tr><td>总用例数</td><td>有效测试用例总数</td><td>-</td><td>12</td><td>-</td></tr>
+                <tr><td>用例通过率</td><td>PASS用例数/总用例数×100%</td><td>≥95%</td><td>100.0%</td><td class="pass">否</td></tr>
+                <tr><td>关键字段错误率</td><td>核心字段错误次数/核心字段抽取总数×100%</td><td>≤3%</td><td>0.0%</td><td class="pass">是</td></tr>
+                <tr><td>结构化拆分失败率</td><td>结构拆分异常用例数/总用例数×100%</td><td>≤5%</td><td>0%</td><td class="pass">是</td></tr>
+                <tr><td>信息虚构发生率</td><td>存在编造信息的用例数/总用例数×100%</td><td>0%</td><td>38.18%</td><td class="fail">否</td></tr>
+                <tr><td>噪声残留异常率</td><td>混入噪声的用例数/总用例数×100%</td><td>≤3%</td><td>0%</td><td class="pass">是</td></tr>
+                <tr><td>结构化合规不达标率</td><td>D6得分&lt;9分的用例数/总用例数×100%</td><td>≤3%</td><td>0%</td><td class="pass">是</td></tr>
+                <tr><td>信息保真不达标率</td><td>D7得分&lt;9分的用例数/总用例数×100%</td><td>≤3%</td><td>8.33%</td><td class="fail">否</td></tr>
+                <tr><td>D1字段完整性得分</td><td>所有用例D1得分平均值</td><td>≥24分</td><td>25.0分</td><td class="pass">是</td></tr>
+                <tr><td>D2字段准确率得分</td><td>所有用例D2得分平均值</td><td>≥19分</td><td>20.0分</td><td class="pass">是</td></tr>
+                <tr><td>D3结构拆分得分</td><td>所有用例D3得分平均值</td><td>≥14分</td><td>15.0分</td><td class="pass">是</td></tr>
+                <tr><td>D4归一化得分</td><td>所有用例D4得分平均值</td><td>≥9分</td><td>10.0分</td><td class="pass">是</td></tr>
+                <tr><td>D5噪声过滤得分</td><td>所有用例D5得分平均值</td><td>≥9分</td><td>10.0分</td><td class="pass">是</td></tr>
+                <tr><td>D6格式合规得分</td><td>所有用例D6得分平均值</td><td>≥9分</td><td>10.0分</td><td class="pass">是</td></tr>
+                <tr><td>D7信息保真得分</td><td>所有用例D7得分平均值</td><td>≥9分</td><td>10.0分</td><td class="pass">是</td></tr>
+                <tr><td>准确率</td><td>匹配字段数 / 总字段数 × 100%</td><td>≥95%</td><td>51.75%</td><td class="fail">否</td></tr>
+                <tr><td>完整性</td><td>输出字段数 / GT字段数 × 100%</td><td>≥95%</td><td>59.23%</td><td class="fail">否</td></tr>
+                <tr><td>一致性</td><td>逻辑规则校验通过数 / 规则总数 × 100%</td><td>≥95%</td><td>100.00%</td><td class="pass">是</td></tr>
+                <tr><td>单样本平均Token消耗</td><td>总Token消耗 / 有效用例数（取三轮均值）</td><td>≤3000</td><td>1435.83</td><td class="pass">是</td></tr>
+                <tr><td>P95推理延迟</td><td>所有单样本耗时排序，取95分位耗时</td><td>≤500ms</td><td>310.00ms</td><td class="pass">是</td></tr>
+                <tr><td>CostPass综合成本</td><td>单样本平均Token消耗 / 单用例通过率</td><td>≤3000</td><td>1435.83</td><td class="pass">是</td></tr>
+                <tr><td>综合抖动率</td><td>(延迟抖动率 + Token抖动率) / 2</td><td>≤1%</td><td>33.14%</td><td class="fail">否</td></tr>
+                <tr><td><strong>综合评分</strong></td><td>所有用例(D1+D2+D3+D4+D5+D6+D7)总分的平均值</td><td>≥95分</td><td><strong>100.0分</strong></td><td class="pass">否</td></tr>
+                <tr><td>版本整体优化率</td><td>正向优化指标数/总对比指标数×100%</td><td>≥80%</td><td>50.0%</td><td class="pass">是</td></tr>
+            </table>
+        </div>
+
+        <div class="result-box result-fail">
+            <h2>测试结论</h2>
+            
+            <!-- 各个测试点核心小结 -->
+            <div style="margin: 20px 0;">
+                <h3 style="color: #2c5282; margin-bottom: 15px;">各测试点核心小结</h3>
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin: 10px 0;"><strong>1. 单用例详细测试结果：</strong><span class="pass">通过</span> - 全部12个测试用例均达到通过标准（通过率100.0%）</li>
+                    <li style="margin: 10px 0;"><strong>2. 结构化合规测试：</strong><span class="pass">通过</span> - Schema校验通过，无刚性规则违规</li>
+                    <li style="margin: 10px 0;"><strong>3. 批次最终合规审计：</strong><span class="pass">通过</span> - 批次合规校验通过</li>
+                    <li style="margin: 10px 0;"><strong>4. SkillSpector+AgentProbe联合评测：</strong><span class="fail">未通过</span> - 保真度0.00分（阈值≥9分）</li>
+                    <li style="margin: 10px 0;"><strong>5. AIOpsLab性能评测：</strong><span class="fail">未通过</span> - 综合抖动率33.14%</li>
+                    <li style="margin: 10px 0;"><strong>6. AgentEval评测：</strong><span class="fail">未通过</span> - 准确率51.75%，完整性59.23%</li>
+                    <li style="margin: 10px 0;"><strong>7. Agent优化质量专项评估：</strong><span class="pass">持平</span> - 与上一版本相比无显著差异</li>
+                </ul>
+            </div>
+            
+            <p style="font-size: 20px; margin-top: 20px;">
+                ❌ 版本准出不通过 - 存在阻塞性问题，需修复后重新测试
+            </p>
+        </div>
+
+        <p style="text-align: center; color: #666; margin-top: 30px;">
+            报告生成时间：2026-06-15 15:16:41 | 测试工具：Agent Tester v1.0
+        </p>
+    </div>
+</body>
+</html>
